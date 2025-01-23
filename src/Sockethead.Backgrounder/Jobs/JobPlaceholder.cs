@@ -3,11 +3,9 @@ using Newtonsoft.Json;
 
 namespace Sockethead.Backgrounder.Jobs;
 
-internal class JobPlaceholder(Type type) : Job
+#if false
+internal class JobPlaceholderX(Type type) : Job
 {
-    public override string JobName => type.Name;
-    public override string ClassFullName => type.FullName!;
-
     public string? InitialStateJson { get; set; }  
     
     /// <summary>
@@ -37,10 +35,9 @@ internal class JobPlaceholder(Type type) : Job
     /// Resolve the actual Background Job for this Placeholder
     /// Move both the ServiceProvider and JobId over
     /// </summary>
-    public Job ResolveJob()
+    public Job ResolveJob(IServiceProvider serviceProvider)
     {
-        Job job = (Job)ServiceProvider.GetRequiredService(serviceType: GetTargetType());
-        job.ServiceProvider = ServiceProvider;
+        Job job = (Job)serviceProvider.GetRequiredService(serviceType: GetTargetType());
         job.JobId = JobId;
 
         if (InitialStateJson is not null)
@@ -49,9 +46,5 @@ internal class JobPlaceholder(Type type) : Job
         PrepareJob?.Invoke(job);
         return job;
     }
-    
-    public override Task ExecuteAsync(ProgressCallback callback, CancellationToken token)
-    {
-        throw new NotImplementedException("Background Job Placeholder ExecuteAsync should never be called.");
-    }
 }
+#endif

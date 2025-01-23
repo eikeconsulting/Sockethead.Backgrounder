@@ -1,19 +1,17 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
+using Sockethead.Backgrounder.Contracts;
 
 namespace Sockethead.Backgrounder.Jobs.Samples;
 
-public class TestSuccessJob : Job
+public class TestSuccessJobInjectable(ILogger<TestSuccessJobInjectable> logger) : IJob
 {
-    public override string JobName => "Test Success Job";
+    public string JobName => "Test Success Job";
 
     public int Start { get; set; } = 1;
     public int End { get; set; } = 10;
     
-    public override async Task ExecuteAsync(ProgressCallback callback, CancellationToken token)
+    public async Task ExecuteAsync(ProgressCallback callback, CancellationToken token)
     {
-        ILogger<TestSuccessJob> logger = ServiceProvider.GetRequiredService<ILogger<TestSuccessJob>>();
-
         double total = End - Start;
         
         // Simulate job progress
@@ -21,6 +19,29 @@ public class TestSuccessJob : Job
         {
             logger.LogInformation("Background job current iterator {i}", i);
 
+            if (token.IsCancellationRequested)
+                return;
+            
+            await callback((i - Start) / total, $"The iterator is {i}");
+            await Task.Delay(1000, token); // Simulate work
+        }
+    }
+}
+
+public class TestSuccessJobNewable : IJob
+{
+    public string JobName => "Test Success Job";
+
+    public int Start { get; set; } = 1;
+    public int End { get; set; } = 10;
+    
+    public async Task ExecuteAsync(ProgressCallback callback, CancellationToken token)
+    {
+        double total = End - Start;
+        
+        // Simulate job progress
+        for (int i = Start; i < End; i++)
+        {
             if (token.IsCancellationRequested)
                 return;
             

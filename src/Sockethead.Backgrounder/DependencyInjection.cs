@@ -11,17 +11,20 @@ public static class DependencyInjection
 {
     public static IServiceCollection RegisterBackgrounderInfrastructure(this IServiceCollection services) =>
         services
+
             // Runner/Background Process
             .AddSingleton<JobRunner>()
             .AddHostedService(provider => provider.GetRequiredService<JobRunner>())
-            
+                
             // Background Managers
             .AddSingleton<JobQueueMgr>()
             .AddSingleton<JobCompletedMgr>()
             .AddSingleton<JobProgressMgr>()
             .AddSingleton<JobLogMgr>()
-            
+            .AddSingleton<JobResolver>()
+            .AddSingleton<JobWorker>()
+
             // Background Jobs
-            .AddScoped<TestSuccessJob>()
+            .AddScoped<TestSuccessJobInjectable>()
         ;
 }

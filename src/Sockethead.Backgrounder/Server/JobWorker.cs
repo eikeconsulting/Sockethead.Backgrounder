@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Sockethead.Backgrounder.Contracts;
 using Sockethead.Backgrounder.Logging;
 using Sockethead.Backgrounder.Progress;
 using Sockethead.Backgrounder.Jobs;
@@ -17,65 +18,59 @@ public class JobWorker(
     JobCompletedMgr jobCompletedMgr,
     JobProgressMgr jobProgressMgr,
     JobLogMgr jobLogMgr,
-    ILogger<JobRunner> logger) : BackgroundService
+    ILogger<JobWorker> logger) : BackgroundService
 {
-    public Job? CurrentJob { get; private set; }
+    public Job? Job { get; set; }
 
     protected override async Task ExecuteAsync(CancellationToken jobToken)
     {
-        Job job = CurrentJob!;
+        logger.LogInformation("Background Job executing.");
+
+        if (Job is null)
+            return;
+        
         try
         {
-            logger.LogInformation("Background Job executing.");
-
             using IServiceScope scope = serviceProvider.CreateScope();
-
-            job.ServiceProvider = scope.ServiceProvider;
-            if (job is JobPlaceholder placeholder)
-                CurrentJob = job = placeholder.ResolveJob();
-
-            job.StartTime = DateTime.UtcNow;
-            job.JobStatus = JobStatus.Running;
+            IJob jobObject = Job.ResolveJobObject(scope.ServiceProvider); 
+            
+            Job.StartTime = DateTime.UtcNow;
+            Job.JobStatus = JobStatus.Running;
 
             await SendProgressAsync(0.0, "Job is starting.");
 
-            using (logger.BeginScope(new Dictionary<string, object>
-                   {
-                       [ JobLogEventSink.ContextName ] = job.JobId
-                   }))
+            using (logger.BeginScope(JobLogEventSink.JobLogScope(Job.JobId)))
             {
-                await job.ExecuteAsync(callback: SendProgressAsync, token: jobToken);
+                await jobObject.ExecuteAsync(callback: SendProgressAsync, token: jobToken);
             }
 
-            job.JobResult = JobResult.Success;
+            Job.JobResult = JobResult.Success;
         }
         catch (OperationCanceledException e)
         {
-            job.JobResult = JobResult.Cancelled;
+            Job.JobResult = JobResult.Cancelled;
             await SendProgressAsync(1.0, $"Job cancelled: {e.Message}.");
         }
         catch (Exception e)
         {
-            job.JobResult = JobResult.Failed;
+            Job.JobResult = JobResult.Failed;
             await SendProgressAsync(1.0, $"Job Error: {e.Message}");
-            logger.LogError(e, "Background Job Error {jobId} {jobName}.", job.JobId, job.JobName);
+            logger.LogError(e, "Background Job Error {jobId} {jobName}.", Job.JobId, Job.JobName);
         }
         finally
         {
-            job.EndTime = DateTime.UtcNow;
-            job.JobStatus = JobStatus.Completed;
+            Job.EndTime = DateTime.UtcNow;
+            Job.JobStatus = JobStatus.Completed;
 
             await SendProgressAsync(1.0, $"Job is complete!");
 
-            jobCompletedMgr.Add(job);
-            CurrentJob = null;
-
-            jobLogMgr.CloseJobLogging(job.JobId);
+            jobCompletedMgr.Add(Job);
+            jobLogMgr.CloseJobLogging(Job.JobId);
         }
 
         return;
 
         async Task SendProgressAsync(double progress, string message)
-            => await jobProgressMgr.SendProgressAsync(job, progress, message, jobToken);
+            => await jobProgressMgr.SendProgressAsync(Job, progress, message, jobToken);
     }
 }

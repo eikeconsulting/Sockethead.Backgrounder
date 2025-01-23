@@ -1,6 +1,8 @@
 ﻿using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
 using Newtonsoft.Json;
+using Sockethead.Backgrounder.Contracts;
 
 namespace Sockethead.Backgrounder.Jobs;
 
@@ -16,8 +18,60 @@ public class JobQueueMgr
 
     public Job? FindJob(string jobId) => JobQueue.FirstOrDefault(t => t.JobId == jobId);
 
-    // TODO: split out the Enqueue business logic to a separate class from the Queue itself
     
+    // TODO: split out the Enqueue business logic to a separate class from the Queue itself
+
+    private static bool HasParameterlessConstructor(Type type)
+    {
+        return type
+            // Get all public instance constructors
+            .GetConstructors(BindingFlags.Public | BindingFlags.Instance)
+            // Check if any constructor has no parameters
+            .Any(ctor => ctor.GetParameters().Length == 0);
+    }
+    
+    public Job EnqueueJob<TJob>(JobCreateType jobCreateType, TJob? jobObject = null, object? initialState = null) 
+        where TJob : class, IJob
+    {
+        Type type = typeof(TJob);
+        
+        switch (jobCreateType)
+        {
+            case JobCreateType.Inject:
+                if (type.FullName == null)
+                    throw new ArgumentNullException(nameof(jobObject), "Unable to resolve type to Inject.");
+                break;
+            
+            case JobCreateType.New:
+                if (type.FullName == null)
+                    throw new ArgumentException("Unable to resolve FullName of type to New (create).", nameof(jobObject));
+                if (!HasParameterlessConstructor(type))
+                    throw new ArgumentException("Type must have a parameterless constructor to New (create) it.", nameof(jobObject));
+                break;
+            
+            case JobCreateType.UseExisting:
+                if (jobObject == null)
+                    throw new ArgumentNullException(nameof(jobObject), "Job Object must be provided for an existing job.");
+                break;
+            
+            default:
+                throw new ArgumentOutOfRangeException(nameof(jobCreateType), jobCreateType, null);
+        }
+        
+        Job job = new Job
+        {
+            JobName = jobObject?.JobName ?? type.Name,
+            ClassFullName = type.FullName ?? string.Empty,
+            InitialStateJson = initialState == null ? null : JsonConvert.SerializeObject(initialState),
+            JobCreateType = jobCreateType,
+        };
+
+        JobQueue.Add(job);
+        
+        return job;
+    }
+    
+#if false
     /// <summary>
     /// Queue a Job (FIFO) for processing
     /// The Job itself will be kept in memory until it is run
@@ -71,4 +125,5 @@ public class JobQueueMgr
         
         return placeholder.JobId;
     }
+#endif
 }

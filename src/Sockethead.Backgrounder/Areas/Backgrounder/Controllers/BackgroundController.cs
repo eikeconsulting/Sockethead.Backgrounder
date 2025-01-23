@@ -65,34 +65,31 @@ public class BackgroundController(
     [HttpGet]
     public IActionResult StartTestSuccessJob()
     {
-        string jobId = jobQueueMgr.EnqueueJob<TestSuccessJob>(prepareJob: job => job.End = 8);
-        return RedirectToAction(nameof(JobDetails), new { jobId }).Success($"Job started!");
+        Job job = jobQueueMgr.EnqueueJob<TestSuccessJobNewable>(JobCreateType.New);
+        return RedirectToAction(nameof(JobDetails), new { job.JobId })
+            .Success($"Job started (New)!");
     }
 
     [HttpGet]
     public IActionResult StartTestSuccessJobDI()
     {
-        string jobId = jobQueueMgr.EnqueueJobDI<TestSuccessJob>(
+        Job job = jobQueueMgr.EnqueueJob<TestSuccessJobInjectable>(JobCreateType.Inject,
             initialState: new 
             { 
                 Start = 25, 
                 End = 50, 
-            },
-            prepareJob: job =>
-            {
-                job.End = 32; // this should override initial state
             });
         
-        return RedirectToAction(nameof(JobDetails), new { jobId })
-            .Success($"Job started: TestSuccessJob (DI): {jobId}");
+        return RedirectToAction(nameof(JobDetails), new { job.JobId })
+            .Success($"Job started: TestSuccessJob (Inject): {job.JobId}");
     }
 
     
     [HttpGet]
     public IActionResult StartTestErrorJob()
     {
-        string jobId = jobQueueMgr.EnqueueJob<TestErrorJob>();
-        return RedirectToAction(nameof(JobDetails), new { jobId })
+        Job job = jobQueueMgr.EnqueueJob<TestErrorJobNewable>(JobCreateType.New);
+        return RedirectToAction(nameof(JobDetails), new { job.JobId })
             .Success($"Job started!");
     }
 

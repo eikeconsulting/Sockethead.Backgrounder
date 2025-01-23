@@ -16,6 +16,8 @@ public class JobLogEventSink : ILogEventSink
     public static string GetLogFileName(string jobId) => $"Logs/BackgroundJob-{jobId}.txt";
     public static string ContextName => "BackgroundContext";
 
+    public static Dictionary<string, object> JobLogScope(string jobId) => new() { [ContextName] = jobId };
+
     private readonly CompactJsonFormatter _jsonFormatter = new();
 
     public JobLogEventSink()
