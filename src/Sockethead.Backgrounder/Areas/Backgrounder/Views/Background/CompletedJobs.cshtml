@@ -1,0 +1,35 @@
+﻿@using Sockethead.Backgrounder.Jobs
+@using Sockethead.Backgrounder.Models
+@using Sockethead.Razor.Grid
+@model CompletedJobsVM
+
+<partial name="_BackgroundMenu"/>
+
+<h4>Completed Jobs</h4>
+
+@(await Html
+    .SimpleGrid(Model.CompletedJobs)
+    .AddColumn(col => col
+        .For(t => t.JobId)
+        .LinkTo(t => $"JobDetails?jobId={t.JobId}"))
+    .AddColumnFor(t => t.JobName)
+    .AddColumnFor(t => t.CreateTime)
+    .AddColumn(col => col
+        .For(t => t.StartTime)
+        .DisplayAs(t => t.StartTime is null ? "" : t.StartTime))
+    .AddColumn(col => col
+        .For(t => t.EndTime)
+        .DisplayAs(t => t.EndTime is null ? "" : t.EndTime))
+    .AddColumn(col => col
+        .For(t => t.ElapsedTime))
+        //.Header("Elapsed")
+        //.DisplayExpression(t => (t.EndTime - t.CreateTime).ToString()))
+    .AddColumnFor(t => t.JobStatus)
+    .AddColumnFor(t => t.JobResult)
+    
+    .AddRowModifier(t => t.JobResult == JobResult.Success, css => css.AddStyle("background-color:lightgreen"))
+    .AddRowModifier( t => t.JobResult == JobResult.Failed, css => css.AddStyle("background-color:lightpink"))
+    .AddRowModifier( t => t.JobResult == JobResult.Cancelled, css => css.AddStyle("background-color:white"))
+    
+    .Sortable()
+    .RenderAsync())

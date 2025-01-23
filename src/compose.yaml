@@ -1,0 +1,6 @@
+﻿services:
+  sockethead.backgrounder.webapp:
+    image: sockethead.backgrounder.webapp
+    build:
+      context: .
+      dockerfile: Sockethead.Backgrounder.WebApp/Dockerfile

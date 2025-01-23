@@ -1,0 +1,97 @@
+﻿@using Microsoft.AspNetCore.Mvc.TagHelpers
+@using Sockethead.Razor.Grid
+@model Sockethead.Backgrounder.Jobs.Job
+
+@{
+    ViewData["Title"] = "Job Details";
+    Layout = "_Layout";
+}
+
+<partial name="_BackgroundMenu"/>
+
+<h4>Job Details</h4>
+
+@(await Html
+    .TwoColumnGrid()
+    .AddRowsForModel(Model)
+    .RenderAsync())
+
+<a class="btn btn-sm btn-primary" href="LogFile?jobId=@Model.JobId">Download Logs</a>
+
+<br/>
+
+<hr/>
+
+<h4>Progress Details</h4>
+
+
+<div id="progressTable">
+    @(await Html
+        .SimpleGrid(Model.GetProgressDetails(), "progressTable")
+        .AddColumnFor(p => p.Timestamp)
+        .AddColumnFor(p => p.JobName)
+        .AddColumn(col => col
+            .For(p => p.Progress)
+            .DisplayAs(p => $"{p.Progress * 100.0:N0}%"))
+        .AddColumnFor(p => p.Message)
+        .Options(options => { options.NoMatchingRecordsHtml = string.Empty; })
+        .RenderAsync())
+</div>
+ 
+ 
+@section Scripts
+{
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+    <script>
+    const connection = new signalR.HubConnectionBuilder()
+        .withUrl("/progressHub")
+        .build();
+
+    connection.on("ReceiveProgress", function (progressDetails) {
+        console.log(progressDetails);
+        
+        if (progressDetails.jobId !== '@Model.JobId')
+            return;
+        
+        addRow(progressDetails);
+    });
+
+    connection.start()
+        .then(() => console.log("Connected to SignalR Hub"))
+        .catch(err => console.error("Error connecting to SignalR:", err));
+
+    // Reference to the table body
+    const tableBody = document.querySelector("#progressTable table tbody");
+
+    // Function to add a new row
+    function addRow(progressDetails) {
+        // Create a new table row
+        const newRow = document.createElement("tr");
+
+        // Create and append cells to the row
+        const timeStampCell = document.createElement("td");
+        const timeCell = document.createElement("time");
+        //timeCell.textContent = progressDetails.timestamp;
+        const date = new Date(progressDetails.timestamp);
+        timeCell.textContent = date.toLocaleString();
+        timeStampCell.appendChild(timeCell);
+        newRow.appendChild(timeStampCell);
+
+        const jobNameCell = document.createElement("td");
+        jobNameCell.textContent = progressDetails.jobName;
+        newRow.appendChild(jobNameCell);
+        
+        const progressCell = document.createElement("td");
+        progressCell.textContent = (progressDetails.progress * 100.0).toFixed(0) + "%";
+        newRow.appendChild(progressCell);
+
+        const messageCell = document.createElement("td");
+        messageCell.textContent = progressDetails.message;
+        newRow.appendChild(messageCell);
+
+        // Append the new row to the table body
+        tableBody.appendChild(newRow);
+    }    
+    
+</script>
+}

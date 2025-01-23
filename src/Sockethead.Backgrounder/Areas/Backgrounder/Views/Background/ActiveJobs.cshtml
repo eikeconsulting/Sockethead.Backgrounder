@@ -1,0 +1,34 @@
+﻿@using Sockethead.Backgrounder.Models
+@using Sockethead.Razor.Grid
+@model ActiveJobsVM
+
+<partial name="_BackgroundMenu"/>
+
+
+<h4>Queued Jobs (FIFO)</h4>
+
+@(await Html
+    .SimpleGrid(Model.ActiveJobs)
+    .AddColumn(col => col
+        .For(t => t.JobId)
+        .LinkTo(t => $"JobDetails?jobId={t.JobId}"))
+    .AddColumnFor(t => t.JobName)
+    .AddColumnFor(t => t.CreateTime)
+    .RenderAsync())
+<hr/>
+
+<h4>Running Job</h4>
+
+@if (Model.CurrentJob is null)
+{
+    <span>No currently running job...</span>
+}
+else
+{
+    @(await Html
+        .TwoColumnGrid()
+        .AddRowsForModel(Model.CurrentJob)
+        .RenderAsync())
+
+    <a class="btn btn-sm btn-primary" href="JobDetails?jobId=@Model.CurrentJob.JobId">Job Details</a>
+}
