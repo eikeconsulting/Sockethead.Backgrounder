@@ -14,6 +14,10 @@ public static class LibraryHelper
             .AddApplicationPart(libraryAssembly)
             .AddRazorRuntimeCompilation(options => 
                 options.FileProviders.Add(new EmbeddedFileProvider(libraryAssembly, "Sockethead.Backgrounder")));
+
+        var resources = libraryAssembly.GetManifestResourceNames();
+        foreach (var resource in resources)
+            Console.WriteLine($"Resource: {resource}");
         
         return mvcBuilder;
     }

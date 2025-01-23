@@ -2,8 +2,12 @@
 @using Sockethead.Razor.Grid
 @model ActiveJobsVM
 
-<partial name="_BackgroundMenu"/>
+@{
+    ViewData["Title"] = "Active Jobs";
+    Layout = "_Layout";
+}
 
+@await Html.PartialAsync("_BackgroundMenu.cshtml")
 
 <h4>Queued Jobs (FIFO)</h4>
 
@@ -14,6 +18,7 @@
         .LinkTo(t => $"JobDetails?jobId={t.JobId}"))
     .AddColumnFor(t => t.JobName)
     .AddColumnFor(t => t.CreateTime)
+    .Css(elements => elements.Table.AddClass("table-striped table-sm table-bordered"))
     .RenderAsync())
 <hr/>
 

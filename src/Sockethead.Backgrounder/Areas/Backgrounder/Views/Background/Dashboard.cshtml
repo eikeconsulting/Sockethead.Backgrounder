@@ -2,7 +2,8 @@
     ViewData["Title"] = "Dashboard";
     Layout = "_Layout";
 }
-<partial name="_BackgroundMenu"/>
+
+@await Html.PartialAsync("_BackgroundMenu.cshtml")
 
 <a class="btn btn-primary" href="StartTestSuccessJob">Start Success Job</a> &nbsp;&nbsp;
 <a class="btn btn-primary" href="StartTestSuccessJobDI">Start Success Job (DI)</a> &nbsp;&nbsp;

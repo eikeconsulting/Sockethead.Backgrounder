@@ -3,7 +3,12 @@
 @using Sockethead.Razor.Grid
 @model CompletedJobsVM
 
-<partial name="_BackgroundMenu"/>
+@{
+    ViewData["Title"] = "Completed Jobs";
+    Layout = "_Layout";
+}
+
+@await Html.PartialAsync("_BackgroundMenu.cshtml")
 
 <h4>Completed Jobs</h4>
 
@@ -32,4 +37,6 @@
     .AddRowModifier( t => t.JobResult == JobResult.Cancelled, css => css.AddStyle("background-color:white"))
     
     .Sortable()
+    .Css(elements => elements.Table.AddClass("table-striped table-sm table-bordered"))
+    
     .RenderAsync())
