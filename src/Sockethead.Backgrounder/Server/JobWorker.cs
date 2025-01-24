@@ -4,18 +4,16 @@ using Microsoft.Extensions.Logging;
 using Sockethead.Backgrounder.Contracts;
 using Sockethead.Backgrounder.Logging;
 using Sockethead.Backgrounder.Progress;
-using Sockethead.Backgrounder.Jobs;
+using Sockethead.Backgrounder.JobManagement;
+using Sockethead.Backgrounder.Models;
 
-namespace Sockethead.Backgrounder.Background;
+namespace Sockethead.Backgrounder.Server;
 
 /// <summary>
-/// Background Job Runner manages all the execution of (all) Background Jobs.
-/// RJE - I know we could use Hangfire, but it is a pain to configure and a bit overkill
-/// Also, this gives us full control over the process and more flexibility on the UI
+/// Job Worker takes care of actually running a single Job in the background.
 /// </summary>
 public class JobWorker(
     IServiceProvider serviceProvider,
-    JobCompletedMgr jobCompletedMgr,
     JobProgressMgr jobProgressMgr,
     JobLogMgr jobLogMgr,
     ILogger<JobWorker> logger) : BackgroundService
@@ -24,15 +22,15 @@ public class JobWorker(
 
     protected override async Task ExecuteAsync(CancellationToken jobToken)
     {
-        logger.LogInformation("Background Job executing.");
-
         if (Job is null)
             return;
+
+        logger.LogInformation("Background Job {jobId} executing.", Job.JobId);
         
         try
         {
             using IServiceScope scope = serviceProvider.CreateScope();
-            IJob jobObject = Job.ResolveJobObject(scope.ServiceProvider); 
+            IJob jobObject = JobMgr.ResolveJobObject(Job, scope.ServiceProvider); 
             
             Job.StartTime = DateTime.UtcNow;
             Job.JobStatus = JobStatus.Running;
@@ -64,10 +62,12 @@ public class JobWorker(
 
             await SendProgressAsync(1.0, $"Job is complete!");
 
-            jobCompletedMgr.Add(Job);
+            //jobCompletedMgr.Add(Job);
             jobLogMgr.CloseJobLogging(Job.JobId);
         }
 
+        logger.LogInformation("Background Job {jobId} completed.", Job.JobId);
+        
         return;
 
         async Task SendProgressAsync(double progress, string message)

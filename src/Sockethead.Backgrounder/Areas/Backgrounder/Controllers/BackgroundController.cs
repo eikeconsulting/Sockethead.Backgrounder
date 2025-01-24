@@ -1,22 +1,17 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Sockethead.Backgrounder.Background;
+using Sockethead.Backgrounder.Contracts;
 using Sockethead.Backgrounder.Jobs;
 using Sockethead.Backgrounder.Logging;
 using Sockethead.Backgrounder.Models;
-using Sockethead.Backgrounder.Jobs.Samples;
+using Sockethead.Backgrounder.JobManagement;
 using Sockethead.Razor.Alert.Extensions;
 
 namespace Sockethead.Areas.Backgrounder.Controllers;
 
 [Area("Backgrounder")]
-public class BackgroundController(
-    JobRunner jobRunner, 
-    JobQueueMgr jobQueueMgr, 
-    JobCompletedMgr jobCompletedMgr) : Controller
+public class BackgroundController(IJobRepo jobRepo, JobMgr jobMgr) : Controller
 {
     public IActionResult SayHello() => Content("Hello from TestController!");
-
-    public IActionResult MyView() => View();
 
     [HttpGet]
     public IActionResult Dashboard()
@@ -28,44 +23,38 @@ public class BackgroundController(
     public IActionResult ActiveJobs()
     {
         return View(new ActiveJobsVM(
-            ActiveJobs: jobQueueMgr.GetQueuedJobs(), 
-            CurrentJob: jobRunner.CurrentJob));
+            QueuedJobs: jobRepo.Jobs.Where(j => j.JobStatus == JobStatus.Queued), 
+            RunningJobs: jobRepo.Jobs.Where(j => j.IsRunning)));
     }
 
     [HttpGet]
     public IActionResult CompletedJobs()
     {
-        return View(new CompletedJobsVM(CompletedJobs: jobCompletedMgr.GetCompletedJobs()));
+        return View(new CompletedJobsVM(CompletedJobs: jobRepo.Jobs.Where(j => j.JobStatus == JobStatus.Completed)));
     }
     
     [HttpGet]
     public IActionResult JobDetails(string jobId)
     {
-        Job? details = FindJob(jobId);
+        Job? details = jobRepo.FindJob(jobId);
         if (details is null)
             return NotFound("Job not found");
         
         return View(model: details);
     }
     
-    private Job? FindJob(string jobId)
+    [HttpPost, HttpGet]
+    public IActionResult CancelJob(string jobId)
     {
-        Job? result = jobCompletedMgr.FindJob(jobId);
-        if (result is not null)
-            return result;
-
-        Job? job = jobRunner.CurrentJob; 
-        if (job is not null && job.JobId == jobId)
-            return job;
-
-        return jobQueueMgr.FindJob(jobId);
+        bool success = jobRepo.RequestCancellation(jobId);
+        return RedirectToAction(nameof(JobDetails), new { jobId })
+            .Success($"Job {jobId} cancelled success: {success}");
     }
-    
     
     [HttpGet]
     public IActionResult StartTestSuccessJob()
     {
-        Job job = jobQueueMgr.EnqueueJob<TestSuccessJobNewable>(JobCreateType.New);
+        Job job = jobMgr.EnqueueJob<TestSuccessJobNewable>(JobCreateType.New);
         return RedirectToAction(nameof(JobDetails), new { job.JobId })
             .Success($"Job started (New)!");
     }
@@ -73,7 +62,7 @@ public class BackgroundController(
     [HttpGet]
     public IActionResult StartTestSuccessJobDI()
     {
-        Job job = jobQueueMgr.EnqueueJob<TestSuccessJobInjectable>(JobCreateType.Inject,
+        Job job = jobMgr.EnqueueJob<TestSuccessJobInjectable>(JobCreateType.Inject,
             initialState: new 
             { 
                 Start = 25, 
@@ -88,7 +77,7 @@ public class BackgroundController(
     [HttpGet]
     public IActionResult StartTestErrorJob()
     {
-        Job job = jobQueueMgr.EnqueueJob<TestErrorJobNewable>(JobCreateType.New);
+        Job job = jobMgr.EnqueueJob<TestErrorJobNewable>(JobCreateType.New);
         return RedirectToAction(nameof(JobDetails), new { job.JobId })
             .Success($"Job started!");
     }
@@ -96,19 +85,11 @@ public class BackgroundController(
     [HttpGet]
     public IActionResult ClearQueuedJobs()
     {
-        jobQueueMgr.ClearQueuedJobs();
+        jobRepo.CancelQueuedJobs();
         return RedirectToAction(nameof(ActiveJobs))
             .Success($"Successfully cleared all enqueued jobs.");
     }
 
-    [HttpGet]
-    public IActionResult CancelCurrentJob()
-    {
-        jobRunner.CancelCurrentJob();
-        return RedirectToAction(nameof(ActiveJobs))
-            .Success($"Successfully cancelled current job (if any was running).");
-    }
-    
     [HttpGet]
     public IActionResult LogFile(string jobId)
     {

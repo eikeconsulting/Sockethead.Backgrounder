@@ -1,12 +1,10 @@
 ﻿using Microsoft.Extensions.Logging;
 using Sockethead.Backgrounder.Contracts;
 
-namespace Sockethead.Backgrounder.Jobs.Samples;
+namespace Sockethead.Backgrounder.Jobs;
 
 public class TestSuccessJobInjectable(ILogger<TestSuccessJobInjectable> logger) : IJob
 {
-    public string JobName => "Test Success Job";
-
     public int Start { get; set; } = 1;
     public int End { get; set; } = 10;
     
@@ -30,8 +28,6 @@ public class TestSuccessJobInjectable(ILogger<TestSuccessJobInjectable> logger) 
 
 public class TestSuccessJobNewable : IJob
 {
-    public string JobName => "Test Success Job";
-
     public int Start { get; set; } = 1;
     public int End { get; set; } = 10;
     

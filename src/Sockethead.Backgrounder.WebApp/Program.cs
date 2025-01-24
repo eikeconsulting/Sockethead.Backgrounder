@@ -1,8 +1,21 @@
+using Serilog;
+using Serilog.Events;
 using Sockethead.Backgrounder;
 using Sockethead.Backgrounder.Progress;
 using Sockethead.Backgrounder.WebApp;
+using Sockethead.Backgrounder.Logging;
 
 var builder = WebApplication.CreateBuilder(args);
+
+Log.Logger = new LoggerConfiguration()
+    .MinimumLevel.Information()
+    .MinimumLevel.Override("Microsoft.AspNetCore", LogEventLevel.Warning)
+    .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}")
+    .Enrich.FromLogContext()
+    .WriteTo.Sink(new JobLogEventSink())
+    .CreateLogger();
+
+builder.Host.UseSerilog();
 
 // Add services to the container.
 builder.Services
@@ -11,13 +24,12 @@ builder.Services
 
 builder.Services.AddRazorPages();
 
-    // TODO: logging support for BackgroundJobs
-    //.Enrich.FromLogContext()
-    //.WriteTo.Sink(new JobLogEventSink())
-
 builder
     .Services.AddSignalR()
-    .Services.RegisterBackgrounderInfrastructure();
+    .Services.RegisterBackgrounderInfrastructure(options =>
+    {
+        options.MaxConcurrentJobs = 4;
+    });
 
 var app = builder.Build();
 

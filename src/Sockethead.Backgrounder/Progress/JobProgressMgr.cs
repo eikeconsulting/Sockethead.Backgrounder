@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.SignalR;
-using Sockethead.Backgrounder.Background;
-using Sockethead.Backgrounder.Jobs;
+using Sockethead.Backgrounder.Models;
 
 namespace Sockethead.Backgrounder.Progress;
 

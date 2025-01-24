@@ -1,6 +1,5 @@
-﻿@using Microsoft.AspNetCore.Mvc.TagHelpers
-@using Sockethead.Razor.Grid
-@model Sockethead.Backgrounder.Jobs.Job
+﻿@using Sockethead.Razor.Grid
+@model Sockethead.Backgrounder.Models.Job
 
 @{
     ViewData["Title"] = "Job Details";
@@ -16,14 +15,30 @@
     .AddRowsForModel(Model)
     .RenderAsync())
 
-<a class="btn btn-sm btn-primary" href="LogFile?jobId=@Model.JobId">Download Logs</a>
+<div class="progress" style="height: 20px;">
+    <div id="progressBar" class="progress-bar" role="progressbar"
+         style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div>
+</div>
 
-<br/>
+<hr/>
+
+<a class="btn btn-primary" href="LogFile?jobId=@Model.JobId">Download Logs</a>
+<br/><br/>
+<a class="btn btn-primary" href="CancelJob?jobId=@Model.JobId">Cancel Job</a>
+<!-- 
+<br/><br/>
+<form asp-area="Backgrounder" asp-controller="Background" asp-action="CancelJob" method="post">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="jobId"/>
+    <div class="form-group">
+        <input type="submit" value="Cancel Job" class="btn btn-primary"/>
+    </div>
+</form>
+-->
 
 <hr/>
 
 <h4>Progress Details</h4>
-
 
 <div id="progressTable">
     @(await Html
@@ -53,7 +68,13 @@
         
         if (progressDetails.jobId !== '@Model.JobId')
             return;
-        
+
+        const progress = Math.round(progressDetails.progress * 100.0);
+        const progressBar = document.getElementById('progressBar');
+        progressBar.style.width = progress + '%'; // Update width
+        progressBar.setAttribute('aria-valuenow', progress); // Update aria-valuenow
+        progressBar.textContent = progress + '%'; // Update text
+       
         addRow(progressDetails);
     });
 

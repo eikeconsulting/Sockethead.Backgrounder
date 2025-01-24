@@ -12,7 +12,7 @@
 <h4>Queued Jobs (FIFO)</h4>
 
 @(await Html
-    .SimpleGrid(Model.ActiveJobs)
+    .SimpleGrid(Model.QueuedJobs)
     .AddColumn(col => col
         .For(t => t.JobId)
         .LinkTo(t => $"JobDetails?jobId={t.JobId}"))
@@ -24,16 +24,13 @@
 
 <h4>Running Job</h4>
 
-@if (Model.CurrentJob is null)
-{
-    <span>No currently running job...</span>
-}
-else
-{
-    @(await Html
-        .TwoColumnGrid()
-        .AddRowsForModel(Model.CurrentJob)
-        .RenderAsync())
-
-    <a class="btn btn-sm btn-primary" href="JobDetails?jobId=@Model.CurrentJob.JobId">Job Details</a>
-}
+@(await Html
+    .SimpleGrid(Model.RunningJobs)
+    .AddColumn(col => col
+        .For(t => t.JobId)
+        .LinkTo(t => $"JobDetails?jobId={t.JobId}"))
+    .AddColumnFor(t => t.JobName)
+    .AddColumnFor(t => t.CreateTime)
+    .Css(elements => elements.Table.AddClass("table-striped table-sm table-bordered"))
+    .RenderAsync())
+<hr/>

@@ -1,7 +1,5 @@
-﻿using Sockethead.Backgrounder.Jobs;
+﻿namespace Sockethead.Backgrounder.Models;
 
-namespace Sockethead.Backgrounder.Models;
+public record ActiveJobsVM(IQueryable<Job> QueuedJobs, IQueryable<Job> RunningJobs);
 
-public record ActiveJobsVM(IReadOnlyList<Job> ActiveJobs, Job? CurrentJob);
-
-public record CompletedJobsVM(IReadOnlyList<Job> CompletedJobs);
+public record CompletedJobsVM(IQueryable<Job> CompletedJobs);

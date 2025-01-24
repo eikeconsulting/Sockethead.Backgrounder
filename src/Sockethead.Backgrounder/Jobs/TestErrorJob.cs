@@ -1,12 +1,10 @@
 ﻿using Microsoft.Extensions.Logging;
 using Sockethead.Backgrounder.Contracts;
 
-namespace Sockethead.Backgrounder.Jobs.Samples;
+namespace Sockethead.Backgrounder.Jobs;
 
 public class TestErrorJobInjectable(ILogger<TestErrorJobInjectable> logger) : IJob
 {
-    public string JobName => "Test Error Job";
-    
     public async Task ExecuteAsync(ProgressCallback callback, CancellationToken token)
     {
         // Simulate job progress
@@ -27,8 +25,6 @@ public class TestErrorJobInjectable(ILogger<TestErrorJobInjectable> logger) : IJ
 
 public class TestErrorJobNewable : IJob
 {
-    public string JobName => "Test Error Job";
-    
     public async Task ExecuteAsync(ProgressCallback callback, CancellationToken token)
     {
         // Simulate job progress
