@@ -1,4 +1,4 @@
-![Sockethead logo](sockethead-logo.png)
+![Sockethead logo](./src/sockethead-logo.png)
 
 # Sockethead.Backgrounder
 A simple background job runner for ASP.Net Core applications.
@@ -16,11 +16,11 @@ It provides visibility to monitor and control of your background jobs, but does 
 
 ## Key Features
 1. Enables immediate execution of background jobs.
-3. Progress bar with realtime update (via SignalR) and percentage complete for each job.
-4. Listing of Queued, Running, and Completed jobs.
-5. Ability to cancel jobs.
-6. Capture of logs for each job to a file that can be downloaded via the UI.
-7. UI Features are installed into your app as an Area allowing you to control the look and feel and functionality.
+2. Progress bar with realtime update (via SignalR) and percentage complete for each job.
+3. Listing of Queued, Running, and Completed jobs.
+4. Ability to cancel jobs.
+5. Capture of logs for each job to a file that can be downloaded via the UI.
+6. UI Features are installed into your app as an Area allowing you to control the look and feel and functionality.
 
 ## Getting Started
 
